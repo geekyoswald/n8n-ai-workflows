@@ -92,7 +92,8 @@ All sensitive credentials remain securely stored inside n8n.
 
 ---
 
-## 🖼 Optional Screenshot
 
-You can add a file named `screenshot.png` in this folder to display the workflow visually.
+## 🖼 Workflow Screenshot
+
+![Workflow Screenshot](./workflow.png)
 
