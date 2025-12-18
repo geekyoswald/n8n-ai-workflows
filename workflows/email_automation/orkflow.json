@@ -1,0 +1,287 @@
+{
+    "name": "emailer",
+    "nodes": [
+      {
+        "parameters": {
+          "pollTimes": {
+            "item": [
+              {
+                "mode": "everyMinute"
+              }
+            ]
+          },
+          "filters": {}
+        },
+        "type": "n8n-nodes-base.gmailTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          0,
+          0
+        ],
+        "id": "599987da-3952-44cb-b659-640ff4441cac",
+        "name": "Gmail Trigger",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "NesrZTxrEp9p72LR",
+            "name": "Gmail account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "inputText": "={{ $json.snippet }}",
+          "categories": {
+            "categories": [
+              {
+                "category": "Repliable",
+                "description": "If the email message contains info that is regarding the company name \"xyz\", then only this repliable should be true , else we do not wish to proceed further."
+              },
+              {
+                "category": "Nonrepliable",
+                "description": "all messages that do not fall in the category of repliable land here "
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.textClassifier",
+        "typeVersion": 1.1,
+        "position": [
+          208,
+          0
+        ],
+        "id": "99cc0c50-2782-46bc-ab45-9adff33a87df",
+        "name": "Text Classifier"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "mode": "list",
+            "value": "gpt-4.1-mini"
+          },
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.2,
+        "position": [
+          144,
+          208
+        ],
+        "id": "8b9a6c58-2faf-4229-8046-8892a3c313dc",
+        "name": "OpenAI Chat Model",
+        "credentials": {
+          "openAiApi": {
+            "id": "MmpMA2jZkUJFp0Sn",
+            "name": "OpenAi account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "={{ $json.snippet }} {{ $json.threadId }}",
+          "options": {
+            "systemMessage": "=You are a smart emailer, you are given a message that has to come to the customer support of the comapny and you have to reply on behalf of the customer support tea, take help of Pinecone Vector Store tool for fetching the internal details of the company. \n\nfinally whatever reply you give dont include subject , just give a well formatted html reply in email."
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 2.2,
+        "position": [
+          560,
+          -96
+        ],
+        "id": "9e03fcf1-9d1e-41a8-b6ea-ad6dc38a4791",
+        "name": "AI Agent"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "mode": "list",
+            "value": "gpt-4.1-mini"
+          },
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.2,
+        "position": [
+          496,
+          128
+        ],
+        "id": "1077aec7-baac-4d7a-ada6-40a7688204f8",
+        "name": "OpenAI Chat Model1",
+        "credentials": {
+          "openAiApi": {
+            "id": "MmpMA2jZkUJFp0Sn",
+            "name": "OpenAi account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "mode": "retrieve-as-tool",
+          "toolDescription": "This is a tool which is able to get the internal details of the company \"xyz\" hence can be used to get info related to the company.",
+          "pineconeIndex": {
+            "__rl": true,
+            "value": "1536-text-emedding-small",
+            "mode": "list",
+            "cachedResultName": "1536-text-emedding-small"
+          },
+          "options": {
+            "pineconeNamespace": "n8n_demo"
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+        "typeVersion": 1.3,
+        "position": [
+          864,
+          128
+        ],
+        "id": "809bdeab-f851-4562-97bf-3345fb91a6b1",
+        "name": "Pinecone Vector Store",
+        "credentials": {
+          "pineconeApi": {
+            "id": "bLaWQbr0zwjIvre4",
+            "name": "PineconeApi account 2"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+        "typeVersion": 1.2,
+        "position": [
+          912,
+          320
+        ],
+        "id": "5b7dfb16-5424-4d5d-9fd6-2a67b2a28c30",
+        "name": "Embeddings OpenAI",
+        "credentials": {
+          "openAiApi": {
+            "id": "MmpMA2jZkUJFp0Sn",
+            "name": "OpenAi account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "resource": "thread",
+          "operation": "reply",
+          "threadId": "={{ $('Text Classifier').item.json.threadId }}",
+          "messageId": "={{ $('Text Classifier').item.json.id }}",
+          "emailType": "html",
+          "message": "={{ $json.output }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          912,
+          -96
+        ],
+        "id": "891abd1b-1b5d-4d94-998a-beb53e57bd6a",
+        "name": "Reply to a message",
+        "webhookId": "1202eb6d-d697-4ab2-b69e-ad23197624df",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "NesrZTxrEp9p72LR",
+            "name": "Gmail account"
+          }
+        }
+      }
+    ],
+    "pinData": {},
+    "connections": {
+      "Gmail Trigger": {
+        "main": [
+          [
+            {
+              "node": "Text Classifier",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenAI Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Text Classifier",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Text Classifier": {
+        "main": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenAI Chat Model1": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Pinecone Vector Store": {
+        "ai_tool": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Embeddings OpenAI": {
+        "ai_embedding": [
+          [
+            {
+              "node": "Pinecone Vector Store",
+              "type": "ai_embedding",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Agent": {
+        "main": [
+          [
+            {
+              "node": "Reply to a message",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "active": false,
+    "settings": {
+      "executionOrder": "v1"
+    },
+    "versionId": "7d85f30d-c0ba-49fc-83a9-cb46c3e869cb",
+    "meta": {
+      "templateCredsSetupCompleted": true,
+      "instanceId": "3b9c4a36bd382d97736563314cc1d0e0dfaeba252326ce04b11560cd5112fc6d"
+    },
+    "id": "mvbutjWlHsRUqzHa",
+    "tags": []
+  }
