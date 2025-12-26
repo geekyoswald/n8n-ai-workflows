@@ -1,0 +1,358 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const results = $input.first().json.results || [];\n\n// Step 1: Sort + take top 4 URLs\nconst top = results\n  .sort((a, b) => b.score - a.score)\n  .slice(0, 4);\n\n// Step 2: Combine all content into one readable string\nlet merged = \"\";\ntop.forEach((r, i) => {\n  merged += `\\n\\n--- SOURCE ${i + 1} ---\\n${r.content}\\n`;\n});\n\n// Step 3: Return ONE item that the AI Agent can digest in one run\nreturn [\n  {\n    merged_content: merged\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1424,
+        0
+      ],
+      "id": "2d799386-5daa-4815-9d8a-a50ebfda56fa",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "promptType": "=define",
+        "text": "=LinkedIn Post Content:{{ $json.merged_content }}\n",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an expert LinkedIn content creator who writes highly engaging, human-sounding posts about AI, technology, and innovation.\n\nYour writing must feel natural — like a colleague sharing something surprising they just discovered — not like an AI trying to sound dramatic.\n\nFollow these guidelines:\n\n1. **Start the post with a surprising or eye-opening fact**, but phrase it in a *natural, conversational way*.  \n   Examples of natural openers:  \n   - “I came across something today that honestly surprised me:”  \n   - “Here’s a number I didn’t expect to see this morning…”  \n   - “I heard a stat this week that stuck with me.”  \n   It should sound like a real human sharing something they just learned.\n\n2. After the fact, smoothly transition into what the topic is, why it matters, and what caught your attention.\n\n3. Build the post with:\n   - clear, grounded insights  \n   - realistic future projections  \n   - future implications for businesses, developers, or society  \n   - a tone that is thoughtful, curious, and sometimes lightly witty\n\n4. Use **light, subtle wit** — clever observations, relatable remarks — nothing forced or cheesy.\n\n5. Write like a real LinkedIn creator:\n   - short paragraphs  \n   - clean markdown  \n   - well-paced flow  \n   - strong but natural transitions  \n   - no robotic repetition or over-formality  \n\n6. Use **2–4 relevant emojis** to boost engagement, but never as decoration or filler.\n\n7. Include **one simple real-world example, analogy, or mini-story** to make the insight relatable.\n\n8. End with a natural reflection or soft call-to-action — something that feels like the kind of thought a real person would share.\n\n9. Output must be **JSON only** in this format:\n\n{\n  \"title\": \"<A strong, natural-sounding LinkedIn headline>\",\n  \"postContent\": \"<The full LinkedIn post written in human, conversational tone in markdown>\"\n}\n\nNo explanations. No commentary. No extra text outside the JSON.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1632,
+        0
+      ],
+      "id": "716b40eb-970c-4d2f-933b-46d8ae3dcda7",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1920,
+        352
+      ],
+      "id": "6ec087b6-d7b4-478d-9e5a-297260fc26fc",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "MmpMA2jZkUJFp0Sn",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/images/generations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "gpt-image-1.5"
+            },
+            {
+              "name": "prompt",
+              "value": "={{ $json.output }}"
+            },
+            {
+              "name": "size",
+              "value": "1536x1024"
+            },
+            {
+              "name": "quality",
+              "value": "high"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2336,
+        0
+      ],
+      "id": "35971d66-8962-4127-af1d-0c5beb2f2528",
+      "name": "Generate Image",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "LmOoJGIVPrLLkmJi",
+          "name": "Image Generation"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data[0].b64_json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        2560,
+        0
+      ],
+      "id": "fe8a68ef-767c-4cfe-876f-87373e5a0ee7",
+      "name": "Convert to Binary"
+    },
+    {
+      "parameters": {
+        "promptType": "=define",
+        "text": "=LinkedIn Post Content:{{ $json.output.postContent }}\n",
+        "options": {
+          "systemMessage": "# Overview\nYou are an AI agent that transforms LinkedIn posts into visual prompt descriptions for generating graphic marketing materials. These visuals are designed to be paired with the post on LinkedIn, helping communicate the message in a visually engaging, brand-aligned way.\n\n## Objective:\n- Read and analyze the given LinkedIn post.\n- Identify the main message, insight, or takeaway from the post.\n- Create a clear and compelling graphic prompt that can be used with a text-to-image generator.\n- The result should be a marketing-style graphic — not a literal scene or hyperrealistic photo — that:\n1) Visually supports or illustrates the key idea of the post\n2) Looks appropriate for use in a professional LinkedIn feed\n3) Feels polished, modern, and engaging\n\n## Output Instructions:\n- Output only the final image prompt. Do not output quotation marks.\n- Do not repeat or rephrase the LinkedIn post.\n- Do not add any explanations or extra content — just the image prompt.\n- Never leave things blank like \"Header area reserved for customizable callout text\"\n- Output numeric stats when available in the original post\n\n## Style Guidelines:\n- Think like a brand designer or marketing creative.\n- Visuals may include: text, charts, icons, abstract shapes, overlays, modern illustrations, motion-like effects, bold typography elements (described, not rendered), or metaphorical concepts.\n- You can mention layout suggestions (e.g., \"split screen design,\" \"header with bold title and subtle background illustration\").\n- Assume the output will be generated using AI image tools — your prompt should guide those tools effectively.\n\n## Example Prompt Format:\nA modern flat-style graphic showing a human brain connected to mechanical gears, representing the fusion of AI and automation. Minimalist background, soft gradients, clean sans-serif text placement space at the top."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2000,
+        0
+      ],
+      "id": "7310ea9d-0dd4-4ab4-8eb0-b3fadf6aba3a",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sendTo": "sakshambitsp@gmail.com",
+        "subject": "={{ $('AI Agent1').item.json.output.title }}",
+        "emailType": "text",
+        "message": "={{ $('AI Agent1').item.json.output.postContent }}",
+        "options": {
+          "appendAttribution": false,
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2768,
+        0
+      ],
+      "id": "6ce2cfef-889a-4be7-b8a0-1a5340503db1",
+      "name": "Send a message",
+      "webhookId": "451320f2-b6b3-4836-9271-4685d59976aa",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dK2YmFkOgy3jxjT5",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        944,
+        0
+      ],
+      "id": "f28fab79-8675-4a66-849f-c021168f8870",
+      "name": "Telegram Trigger",
+      "webhookId": "6938934f-659c-49d2-964a-d169dea086a6",
+      "credentials": {
+        "telegramApi": {
+          "id": "as0lSIt6j1sJ0Ru9",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $json.message.text }}"
+            },
+            {
+              "name": "max_results",
+              "value": "8"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        0
+      ],
+      "id": "2aff6fe3-398a-4153-a354-e3d96b74b630",
+      "name": "HTTP Request1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "HwpD3xtIw3SnOGfL",
+          "name": "tavily"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"title\": \"Your Title Here\",\n  \"postContent\": \"Your LinkedIn post in markdown here\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1888,
+        176
+      ],
+      "id": "a53f41bc-78d1-476b-9e0c-f39eef2b3fea",
+      "name": "Structured Output Parser"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Image": {
+      "main": [
+        [
+          {
+            "node": "Convert to Binary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to Binary": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Generate Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f88bd025-ee95-4703-9fd8-9ff970b04c82",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3b9c4a36bd382d97736563314cc1d0e0dfaeba252326ce04b11560cd5112fc6d"
+  },
+  "id": "sDhybmUTcsZWT5Ld",
+  "tags": []
+}
