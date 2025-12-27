@@ -115,6 +115,7 @@ All sensitive info remains secure inside n8n’s encrypted credential store.
 
 ---
 
-## 🖼 Workflow Video
 
-![Workflow Video](./workflow.mp4)
+## 🖼 Workflow Screenshot
+
+![Workflow Screenshot](./workflow.png)
