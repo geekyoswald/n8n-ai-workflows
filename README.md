@@ -13,9 +13,5 @@ Each workflow in this repository is organized in its own folder and includes:
 - A brief README describing its purpose and logic  
 - Optional screenshots or diagrams  
 
-This structure allows the repository to grow as I create more automations over time.
 
----
-
-## 📁 Repository Structure
 
